@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=58.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gogo-operator"
+version = "0.1.0"
+description = "TODO"
+readme = "README.md"
+requires-python = ">=3.10,<3.15"
+authors = [
+    { name = "Shamistan Karimov", email = "ahresgg@gmail.com" }
+]
+dependencies = [
+  "motion-stack",
+  "asyncio-for-robotics",
+  "gogo-keyboard",
+  "urwid",
+]
+
+[tool.setuptools]
+packages.find.include = [ "gogo_operator", "gogo_operator.*" ]
+

@@ -1,0 +1,19 @@
+[workspace]
+authors = ["Shamistan Karimov <ahresgg@gmail.com>"]
+channels = ["conda-forge"]
+name = "gogo_operator"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = ">=3.10,<3.15"
+pytest = "*"
+pytest-asyncio = "*"
+
+[pypi-dependencies]
+motion_stack = { git = "ssh://git@github.com/2lian/motion-stack-2.git", subdirectory = "src/motion_stack" }
+ms_moonbot_zero = { git = "ssh://git@github.com/2lian/motion-stack-2.git", subdirectory = "src/ms_moonbot_zero" }
+ms_pyzeros_bridge = { git = "ssh://git@github.com/2lian/motion-stack-2.git", subdirectory = "src/ms_pyzeros_bridge" }
+gogo_operator = { path = ".", editable=true}

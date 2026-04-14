@@ -1,0 +1,7 @@
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+Session.vim
+
+gogo_operator.egg-info/
