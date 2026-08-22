@@ -22,6 +22,25 @@ class TriStateCheckbox(urwid.CheckBox):
 class OperatorTUI:
     """Urwid interface running on the application's asyncio event loop."""
 
+    ROBOT_COLORS = [
+        "dark red",
+        "dark green",
+        "brown",
+        "dark blue",
+        "dark magenta",
+        "dark cyan",
+        "light gray",
+        "light red",
+        "light green",
+        "yellow",
+        "light blue",
+        "light magenta",
+        "light cyan",
+        "white",
+    ]
+    JOINTS_PER_COLUMN = 3
+    MAX_JOINT_COLUMNS = 4
+
     def __init__(self, controller: OperatorController, transport: str) -> None:
         self.controller = controller
         self.transport = transport
@@ -32,9 +51,10 @@ class OperatorTUI:
             dividechars=1,
         )
         self.body = urwid.SimpleFocusListWalker([])
+        self.listbox = urwid.ListBox(self.body)
         self.logs = urwid.Text("")
         self.frame = urwid.Frame(
-            urwid.ListBox(self.body),
+            self.listbox,
             header=header,
             footer=urwid.LineBox(self.logs, title=" Logs "),
         )
@@ -46,6 +66,7 @@ class OperatorTUI:
             unhandled_input=self._unhandled_input,
         )
         self._last_signature: Optional[tuple] = None
+        self._rendered_mode: Optional[str] = None
 
     async def run(self) -> None:
         with self.loop.start():
@@ -59,7 +80,8 @@ class OperatorTUI:
     def refresh(self, force: bool = False) -> None:
         snapshot = self.controller.registry.snapshot()
         self.mode_header.set_text(
-            f"Gogo Operator  |  {self.transport}  |  {self.controller.current_mode}"
+            f"Gogo Operator 🦍  |  {self.transport}  |  "
+            f"{self.controller.current_mode}"
         )
         selected = self.controller.selected_robots
         marks = []
@@ -70,10 +92,16 @@ class OperatorTUI:
         self.logs.set_text("\n".join(self.controller.logs))
 
         signature = self._signature(snapshot)
+        mode = self.controller.current_mode
         if force or signature != self._last_signature:
+            focus_position = self.body.focus if self.body else None
+            preserve_focus = mode == self._rendered_mode
             self._last_signature = signature
-            builder = getattr(self, f"_build_{self.controller.current_mode}")
+            builder = getattr(self, f"_build_{mode}")
             builder(snapshot)
+            if preserve_focus and focus_position is not None and self.body:
+                self.body.set_focus(min(focus_position, len(self.body) - 1))
+            self._rendered_mode = mode
         self.loop.draw_screen()
 
     def _signature(self, snapshot: FleetSnapshot) -> tuple:
@@ -110,8 +138,6 @@ class OperatorTUI:
         self.body.clear()
         self.body.extend(
             [
-                urwid.Text("Motion Stack 2 Operator", align="center"),
-                urwid.Divider("─"),
                 self._button("Monitor robots and joints  [M]", "monitor"),
                 self._button("Robot selection           [R]", "robot_select"),
                 self._button("Joint control             [J]", "joint_select"),
@@ -210,30 +236,50 @@ class OperatorTUI:
         self.body.append(self._speed_picker(kind))
         self.body.append(urwid.Divider())
 
-        shown = False
-        for robot in snapshot.robots:
-            if robot.namespace not in self.controller.selected_robots:
-                continue
-            shown = True
-            self.body.append(urwid.Text(("title", self._robot_title(robot))))
-            for joint in robot.joints:
-                reference = (robot.namespace, joint.name)
-                state = self._selection_state(kind, reference)
-                checkbox = TriStateCheckbox(joint.name, state=state)
-                urwid.connect_signal(
-                    checkbox,
-                    "change",
-                    lambda _, new_state, ref=reference: (
-                        self.controller.set_joint_selection(
-                            kind,
-                            ref,
-                            "inverted" if new_state == "mixed" else new_state,
+        robots = [
+            robot
+            for robot in snapshot.robots
+            if robot.namespace in self.controller.selected_robots
+        ]
+        for color_index, robot in enumerate(robots):
+            base_attr = f"robot{color_index % len(self.ROBOT_COLORS)}"
+            focus_attr = f"{base_attr}_focus"
+            self.body.append(urwid.Text((base_attr, self._robot_title(robot))))
+
+            joints_per_column = max(
+                self.JOINTS_PER_COLUMN,
+                math.ceil(len(robot.joints) / self.MAX_JOINT_COLUMNS),
+            )
+            columns = []
+            for start in range(0, len(robot.joints), joints_per_column):
+                items = []
+                for joint in robot.joints[start : start + joints_per_column]:
+                    reference = (robot.namespace, joint.name)
+                    state = self._selection_state(kind, reference)
+                    checkbox = TriStateCheckbox(joint.name, state=state)
+                    urwid.connect_signal(
+                        checkbox,
+                        "change",
+                        lambda _, new_state, ref=reference: (
+                            self.controller.set_joint_selection(
+                                kind,
+                                ref,
+                                "inverted" if new_state == "mixed" else new_state,
+                            )
+                        ),
+                    )
+                    items.append(
+                        urwid.AttrMap(
+                            checkbox,
+                            base_attr,
+                            focus_map=focus_attr,
                         )
-                    ),
-                )
-                self.body.append(urwid.AttrMap(checkbox, None, focus_map="focus"))
+                    )
+                columns.append(("weight", 1, urwid.Pile(items)))
+            if columns:
+                self.body.append(urwid.Columns(columns, dividechars=1))
             self.body.append(urwid.Divider())
-        if not shown:
+        if not robots:
             self.body.append(urwid.Text("Select at least one discovered robot first."))
         self.body.extend(
             [
@@ -435,12 +481,16 @@ class OperatorTUI:
     def _rounded(value: Optional[float]) -> Optional[float]:
         return None if value is None else round(value, 3)
 
-    @staticmethod
-    def _palette() -> list[tuple[str, str, str]]:
-        return [
+    @classmethod
+    def _palette(cls) -> list[tuple[str, str, str]]:
+        palette = [
             ("disabled", "dark gray", ""),
             ("focus", "black", "light gray"),
             ("selected", "light green", ""),
             ("unselected", "light red", ""),
             ("title", "light cyan,bold", ""),
         ]
+        for index, color in enumerate(cls.ROBOT_COLORS):
+            palette.append((f"robot{index}", color, ""))
+            palette.append((f"robot{index}_focus", color, ""))
+        return palette

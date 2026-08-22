@@ -116,10 +116,10 @@ environments:
       - conda: https://prefix.dev/motion-stack/noarch/asyncio_for_robotics-1.3.5-pyh4616a5c_0.conda
       - conda: https://prefix.dev/motion-stack/noarch/gogo_keyboard-1.0.3-pyh4616a5c_0.conda
       - pypi: ./
-      - pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fmotion_stack&rev=d41009688b2ec69f2d399c5b87f3461b96026b0c#d41009688b2ec69f2d399c5b87f3461b96026b0c
-      - pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fms_moonbot_zero&rev=d41009688b2ec69f2d399c5b87f3461b96026b0c#d41009688b2ec69f2d399c5b87f3461b96026b0c
-      - pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fms_pyzeros_bridge&rev=d41009688b2ec69f2d399c5b87f3461b96026b0c#d41009688b2ec69f2d399c5b87f3461b96026b0c
-      - pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fms_zenoh_bridge&rev=d41009688b2ec69f2d399c5b87f3461b96026b0c#d41009688b2ec69f2d399c5b87f3461b96026b0c
+      - pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fmotion_stack#d41009688b2ec69f2d399c5b87f3461b96026b0c
+      - pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fms_moonbot_zero#d41009688b2ec69f2d399c5b87f3461b96026b0c
+      - pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fms_pyzeros_bridge#d41009688b2ec69f2d399c5b87f3461b96026b0c
+      - pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fms_zenoh_bridge#d41009688b2ec69f2d399c5b87f3461b96026b0c
       - pypi: git+ssh://git@github.com/2lian/pyzeros2.git#4fccefa10aac7e17f776edd3603b6cee44b8e9cf
       - pypi: https://files.pythonhosted.org/packages/06/ba/c7534df8fb3f04c48862f24f1b4118c0d1e793fdf78e90fe514cbf404e01/roboticstoolbox_python-1.1.1.tar.gz
       - pypi: https://files.pythonhosted.org/packages/10/bd/c038d7cc38edc1aa5bf91ab8068b63d4308c66c4c8bb3cbba7dfbc049f9c/pyparsing-3.3.2-py3-none-any.whl
@@ -1464,7 +1464,7 @@ packages:
   - ms-zenoh-bridge ; extra == 'all'
   - pyzeros ; extra == 'all'
   requires_python: '>=3.10,<3.15'
-- pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fmotion_stack&rev=d41009688b2ec69f2d399c5b87f3461b96026b0c#d41009688b2ec69f2d399c5b87f3461b96026b0c
+- pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fmotion_stack#d41009688b2ec69f2d399c5b87f3461b96026b0c
   name: motion-stack
   version: 0.0.1
   requires_dist:
@@ -1481,20 +1481,20 @@ packages:
   - urwid
   - xacro
   requires_python: '>=3.10,<3.15'
-- pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fms_moonbot_zero&rev=d41009688b2ec69f2d399c5b87f3461b96026b0c#d41009688b2ec69f2d399c5b87f3461b96026b0c
+- pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fms_moonbot_zero#d41009688b2ec69f2d399c5b87f3461b96026b0c
   name: ms-moonbot-zero
   version: 0.0.1
   requires_dist:
   - jinja2
   - motion-stack
   requires_python: '>=3.10,<3.15'
-- pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fms_pyzeros_bridge&rev=d41009688b2ec69f2d399c5b87f3461b96026b0c#d41009688b2ec69f2d399c5b87f3461b96026b0c
+- pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fms_pyzeros_bridge#d41009688b2ec69f2d399c5b87f3461b96026b0c
   name: ms-pyzeros-bridge
   version: 0.0.1
   requires_dist:
   - motion-stack
   requires_python: '>=3.10,<3.15'
-- pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fms_zenoh_bridge&rev=d41009688b2ec69f2d399c5b87f3461b96026b0c#d41009688b2ec69f2d399c5b87f3461b96026b0c
+- pypi: git+ssh://git@github.com/2lian/motion-stack-2.git?subdirectory=src%2Fms_zenoh_bridge#d41009688b2ec69f2d399c5b87f3461b96026b0c
   name: ms-zenoh-bridge
   version: 0.0.1
   requires_dist:
