@@ -5,3 +5,8 @@
 Session.vim
 
 gogo_operator.egg-info/
+
+# Python/runtime caches
+__pycache__/
+.pytest_cache/
+.cydr_cache/
