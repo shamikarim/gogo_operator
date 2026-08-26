@@ -28,10 +28,14 @@ class TriStateCheckbox(urwid.CheckBox):
         super().__init__(label, state=state, has_mixed=True)
 
     def mouse_event(self, size, event, button, x, y, focus):
-        if event == "mouse press" and button == 3:
+        if event == "mouse press":
             current = self.get_state()
-            self.set_state("mixed" if current is False else False)
-            return True
+            if button == 1:
+                self.set_state(current is not True)
+                return True
+            if button == 3:
+                self.set_state("mixed" if current is False else False)
+                return True
         return super().mouse_event(size, event, button, x, y, focus)
 
 
@@ -148,7 +152,13 @@ class OperatorTUI:
             )
         else:
             values = ()
-        return structure, values, self.controller.current_mode, self.controller.revision
+        mode = self.controller.current_mode
+        revision = (
+            None
+            if mode in {"joint_select", "wheel_select"}
+            else self.controller.revision
+        )
+        return structure, values, mode, revision
 
     def _build_main(self, snapshot: FleetSnapshot) -> None:
         self.body.clear()
@@ -245,7 +255,7 @@ class OperatorTUI:
         title = "Joint" if kind == "joint" else "Wheel"
         self.body.append(
             urwid.Text(
-                f"{title} selection: [X] normal, [R] reversed. "
+                f"{title} selection: left-click [X], right-click [R]. "
                 "Space/Enter cycles the state."
             )
         )

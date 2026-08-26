@@ -108,6 +108,56 @@ def test_right_click_toggles_reverse_selection() -> None:
     assert changes == ["mixed", False, True, False]
 
 
+def test_left_click_only_toggles_normal_selection() -> None:
+    checkbox = TriStateCheckbox("joint")
+
+    assert checkbox.mouse_event((20,), "mouse press", 1, 0, 0, True)
+    assert checkbox.get_state() is True
+    assert checkbox.mouse_event((20,), "mouse press", 1, 0, 0, True)
+    assert checkbox.get_state() is False
+    checkbox.set_state("mixed")
+    assert checkbox.mouse_event((20,), "mouse press", 1, 0, 0, True)
+    assert checkbox.get_state() is True
+
+
+@pytest.mark.parametrize("mode", ["joint_select", "wheel_select"])
+@pytest.mark.asyncio
+async def test_selection_click_preserves_nested_focus(mode: str) -> None:
+    registry = RobotRegistry()
+    registry.observe_joints(
+        "leg1",
+        {
+            f"joint_{index}": JState(f"joint_{index}", position=0.0)
+            for index in range(4)
+        },
+    )
+    controller = OperatorController(registry)
+    controller.select_robot("leg1", True)
+    controller.set_mode(mode)
+    tui = OperatorTUI(controller, "test")
+    tui.loop.draw_screen = lambda: None
+    tui.refresh()
+
+    joint_grid = next(
+        widget for widget in tui.body if isinstance(widget, urwid.Columns)
+    )
+    joint_grid.focus_position = 1
+    second_column = cast(urwid.Pile, joint_grid.contents[1][0])
+    checkbox_entry = cast(tuple[urwid.Widget, object], second_column.contents[0])
+    checkbox_map = cast(urwid.AttrMap, checkbox_entry[0])
+    checkbox = cast(TriStateCheckbox, checkbox_map.original_widget)
+
+    checkbox.mouse_event((20,), "mouse press", 1, 0, 0, True)
+    tui.refresh()
+
+    refreshed_grid = next(
+        widget for widget in tui.body if isinstance(widget, urwid.Columns)
+    )
+    assert refreshed_grid is joint_grid
+    assert joint_grid.focus_position == 1
+    assert checkbox.get_state() is True
+
+
 @pytest.mark.asyncio
 async def test_wheel_picker_caps_large_joint_sets_at_four_columns() -> None:
     registry = RobotRegistry()
