@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from time import monotonic
 from typing import Dict, Optional, Tuple
@@ -6,6 +7,19 @@ from asyncio_for_robotics import BaseSub
 from motion_stack.lvl1.core import JStateBatch
 from motion_stack.utils.joint_state import JState
 from motion_stack.utils.pose import Pose
+
+_NUMBER_PART = re.compile(r"(\d+)")
+
+
+def _natural_sort_key(value: str) -> tuple[tuple[int, int, str], ...]:
+    parts = []
+    for part in _NUMBER_PART.split(value):
+        if part.isdigit():
+            number = str(int(part))
+            parts.append((1, len(number), number))
+        else:
+            parts.append((0, 0, part.casefold()))
+    return tuple(parts)
 
 
 def normalize_namespace(namespace: str) -> str:
@@ -150,7 +164,9 @@ class RobotRegistry:
                     effort=state.effort,
                     age=max(0.0, now - robot.joint_last_seen[name]),
                 )
-                for name, state in sorted(robot.joints.items())
+                for name, state in sorted(
+                    robot.joints.items(), key=lambda item: _natural_sort_key(item[0])
+                )
             )
             robots.append(
                 RobotSnapshot(

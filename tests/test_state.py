@@ -31,3 +31,21 @@ async def test_registry_updates_are_exposed_as_a_base_sub() -> None:
     snapshot = await asyncio.wait_for(update, timeout=1)
     assert snapshot.robots[0].namespace == ""
     assert display_namespace("") == "/"
+
+
+@pytest.mark.asyncio
+async def test_registry_naturally_sorts_joint_numbers() -> None:
+    registry = RobotRegistry()
+    names = ("joint10", "wheel_10", "joint2", "joint1", "wheel_2")
+    registry.observe_joints(
+        "leg1",
+        {name: JState(name, position=0.0) for name in names},
+    )
+    await asyncio.sleep(0)
+
+    robot = registry.snapshot().get("leg1")
+
+    assert robot is not None
+    assert tuple(joint.name for joint in robot.joints) == (
+        "joint1", "joint2", "joint10", "wheel_2", "wheel_10"
+    )

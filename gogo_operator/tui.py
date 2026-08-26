@@ -1,11 +1,20 @@
 import asyncio
 import math
+import re
 from typing import Any, Callable, Literal, Optional
 
 import urwid
 
 from .operator import JointRef, OperatorController
 from .state import FleetSnapshot, RobotSnapshot, display_namespace
+
+
+_FIRST_NUMBER = re.compile(r"\d")
+
+
+def _joint_color_group(name: str) -> str:
+    prefix = _FIRST_NUMBER.split(name, maxsplit=1)[0].rstrip("_")
+    return (prefix or name).casefold()
 
 
 class TriStateCheckbox(urwid.CheckBox):
@@ -17,6 +26,13 @@ class TriStateCheckbox(urwid.CheckBox):
 
     def __init__(self, label: str, state: bool | Literal["mixed"] = False) -> None:
         super().__init__(label, state=state, has_mixed=True)
+
+    def mouse_event(self, size, event, button, x, y, focus):
+        if event == "mouse press" and button == 3:
+            current = self.get_state()
+            self.set_state("mixed" if current is False else False)
+            return True
+        return super().mouse_event(size, event, button, x, y, focus)
 
 
 class OperatorTUI:
@@ -243,17 +259,24 @@ class OperatorTUI:
         ]
         for color_index, robot in enumerate(robots):
             base_attr = f"robot{color_index % len(self.ROBOT_COLORS)}"
-            focus_attr = f"{base_attr}_focus"
             self.body.append(urwid.Text((base_attr, self._robot_title(robot))))
 
             joints_per_column = max(
                 self.JOINTS_PER_COLUMN,
                 math.ceil(len(robot.joints) / self.MAX_JOINT_COLUMNS),
             )
+            group_attrs: dict[str, str] = {}
             columns = []
             for start in range(0, len(robot.joints), joints_per_column):
                 items = []
                 for joint in robot.joints[start : start + joints_per_column]:
+                    group = _joint_color_group(joint.name)
+                    if group not in group_attrs:
+                        palette_index = (
+                            color_index + len(group_attrs)
+                        ) % len(self.ROBOT_COLORS)
+                        group_attrs[group] = f"robot{palette_index}"
+                    joint_attr = group_attrs[group]
                     reference = (robot.namespace, joint.name)
                     state = self._selection_state(kind, reference)
                     checkbox = TriStateCheckbox(joint.name, state=state)
@@ -271,8 +294,8 @@ class OperatorTUI:
                     items.append(
                         urwid.AttrMap(
                             checkbox,
-                            base_attr,
-                            focus_map=focus_attr,
+                            joint_attr,
+                            focus_map=f"{joint_attr}_focus",
                         )
                     )
                 columns.append(("weight", 1, urwid.Pile(items)))

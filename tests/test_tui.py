@@ -11,7 +11,7 @@ from motion_stack.utils.time import Time
 
 from gogo_operator.operator import OperatorController
 from gogo_operator.state import RobotRegistry
-from gogo_operator.tui import OperatorTUI
+from gogo_operator.tui import OperatorTUI, TriStateCheckbox
 
 
 @pytest.mark.asyncio
@@ -37,13 +37,18 @@ async def test_all_tui_screens_build_from_registry_state() -> None:
 
 
 @pytest.mark.asyncio
-async def test_joint_picker_uses_colored_three_item_columns() -> None:
+async def test_joint_picker_groups_colors_by_natural_name_prefix() -> None:
     registry = RobotRegistry()
     registry.observe_joints(
         "leg1",
         {
-            f"joint_{index}": JState(f"joint_{index}", position=0.0)
-            for index in range(7)
+            "wheel_1": JState("wheel_1", position=0.0),
+            "arm_10": JState("arm_10", position=0.0),
+            "panel_1": JState("panel_1", position=0.0),
+            "arm_2": JState("arm_2", position=0.0),
+            "wheel_0": JState("wheel_0", position=0.0),
+            "arm_1": JState("arm_1", position=0.0),
+            "panel_0": JState("panel_0", position=0.0),
         },
     )
     controller = OperatorController(registry)
@@ -56,12 +61,51 @@ async def test_joint_picker_uses_colored_three_item_columns() -> None:
         widget for widget in tui.body if isinstance(widget, urwid.Columns)
     )
     assert len(joint_grid.contents) == 3
-    first_column = cast(urwid.Pile, joint_grid.contents[0][0])
-    assert isinstance(first_column, urwid.Pile)
-    first_entry = cast(tuple[urwid.Widget, object], first_column.contents[0])
-    first_joint = first_entry[0]
-    assert isinstance(first_joint, urwid.AttrMap)
-    assert first_joint.get_attr_map() == {None: "robot0"}
+    labels = []
+    colors = []
+    for column, _ in joint_grid.contents:
+        pile = cast(urwid.Pile, column)
+        for entry in pile.contents:
+            joint = cast(tuple[urwid.Widget, object], entry)[0]
+            assert isinstance(joint, urwid.AttrMap)
+            checkbox = cast(TriStateCheckbox, joint.original_widget)
+            labels.append(str(checkbox.label))
+            colors.append(joint.get_attr_map()[None])
+    assert labels == [
+        "arm_1",
+        "arm_2",
+        "arm_10",
+        "panel_0",
+        "panel_1",
+        "wheel_0",
+        "wheel_1",
+    ]
+    assert colors == [
+        "robot0",
+        "robot0",
+        "robot0",
+        "robot1",
+        "robot1",
+        "robot2",
+        "robot2",
+    ]
+
+
+def test_right_click_toggles_reverse_selection() -> None:
+    checkbox = TriStateCheckbox("joint")
+    changes: list[object] = []
+    urwid.connect_signal(
+        checkbox, "change", lambda _, state: changes.append(state)
+    )
+
+    assert checkbox.mouse_event((20,), "mouse press", 3, 0, 0, True)
+    assert checkbox.get_state() == "mixed"
+    assert checkbox.mouse_event((20,), "mouse press", 3, 0, 0, True)
+    assert checkbox.get_state() is False
+    checkbox.set_state(True)
+    assert checkbox.mouse_event((20,), "mouse press", 3, 0, 0, True)
+    assert checkbox.get_state() is False
+    assert changes == ["mixed", False, True, False]
 
 
 @pytest.mark.asyncio
